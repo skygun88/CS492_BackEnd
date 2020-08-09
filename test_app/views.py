@@ -2,17 +2,14 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from test_app.models import Test, ImageModel
 from test_app.serializers import TestSerializer, ImageSerializer
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
+from django.http import HttpResponse, JsonResponse, FileResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
-
+from PIL import Image, ImageOps
 import os
 import base64
-import json
-from PIL import Image, ImageOps
+import datetime
 
 
 # Create your views here.
@@ -26,27 +23,44 @@ class ImageViewSet(viewsets.ModelViewSet):
     serializer_class = ImageSerializer
 
 
-
 def api_test(request, content):
     if request.method == 'POST':
         print("Test - POST")
-        print(request)
-        print(request.method)
-        # image_file = request.FILES['uploaded_file']
+        ''' 1. Get Image file from content as temp_img_ + date + .jpg '''
         image_file = request.FILES.get('uploaded_file')
-        path = default_storage.save('test.jpg', ContentFile(image_file.read()))
+        filename = 'temp/temp_img_' + str(datetime.datetime.now()) + '.jpg'
+        path = default_storage.save(filename, ContentFile(image_file.read()))
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
         print("Save finish")
-        img = Image.open(tmp_file)
-        im_flip = ImageOps.flip(img)
-        im_flip.save('media/test_flip.jpg', quality=95)
-    else:
-        print("Test - not Post")
+        ''' 2. Image Processing by using GAN model -- YeJi's part  '''
+        new_path = imgProcessing(tmp_file)
+        ''' 3. Send Json Response message containing Processed image (ID picture) '''
+        with open(new_path, mode='rb') as file:
+            img = file.read()
+        data = {'img': base64.encodebytes(img).decode("utf-8")}
+        print(data['img'][:30])
+        deleteTemp(tmp_file, new_path)
+        return JsonResponse(data)
+    elif request.method == 'GET':
+        print("Test - GET")
     return HttpResponse("<http><body>hihihi</body></http>")
-    # data = {}
-    # with open('media/t1.png', mode='rb') as file:
-    #     img = file.read()
-    # data['img'] = base64.encodebytes(img).decode("utf-8")
-    # json_data = json.dumps(data)
-    # print(json_data)
-    # return JsonResponse(json_data, json_dumps_params={'ensure_ascii': True}, status=200)
+
+''' Function to process the face image to ID Picture '''
+def imgProcessing(path):
+    filename = path.split('/')[-1]
+    img = Image.open(path)
+    im_flip = filpImage(img)
+    new_filename = path.replace(filename, 'temp_processed_') + str(datetime.datetime.now()) + '.jpg'
+    im_flip.save(new_filename, quality=100)
+    return new_filename
+
+
+def filpImage(img):
+    return ImageOps.flip(img)
+
+''' Delete the temporary file '''
+def deleteTemp(path1, path2):
+    if os.path.isfile(path1):
+        os.remove(path2)
+    if os.path.isfile(path1):
+        os.remove(path2)

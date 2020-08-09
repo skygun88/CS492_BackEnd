@@ -25,11 +25,8 @@ from django.conf.urls.static import static
 router = routers.DefaultRouter()
 router.register(r'tests', views.TestViewSet)
 router.register(r'images', views.ImageViewSet)
-#router.register(r'imgtest', views.ApiViewSet)
 
 urlpatterns = [
-    path(r'testapp/test', views.api_test),
-    #url(r'^imgtest/(.*)$', views.ApiViewSet),
     url(r'^imgtest/(.*)$', views.api_test),
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
