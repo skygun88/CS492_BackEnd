@@ -86,7 +86,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'android',
         'USER': 'root',
-        'PASSWORD': 'qweasd123',
+        'PASSWORD': 'cs492_group_b',
         'HOST': 'localhost',
         'PORT': '',
     }

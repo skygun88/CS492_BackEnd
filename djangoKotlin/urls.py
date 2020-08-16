@@ -28,6 +28,7 @@ router.register(r'images', views.ImageViewSet)
 
 urlpatterns = [
     url(r'^imgtest/(.*)$', views.api_test),
+    url(r'^imgur/(.*)$', views.media_test),
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
