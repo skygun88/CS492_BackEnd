@@ -27,7 +27,7 @@ router.register(r'tests', views.TestViewSet)
 router.register(r'images', views.ImageViewSet)
 
 urlpatterns = [
-    url(r'^imgtest/(.*)$', views.api_test),
+    url(r'^process/(.*)$', views.api_test),
     url(r'^imgur/(.*)$', views.media_test),
     path('admin/', admin.site.urls),
     path('', include(router.urls)),

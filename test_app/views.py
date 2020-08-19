@@ -7,15 +7,18 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
 from PIL import Image, ImageOps
-import os
+
+import os, sys
 import base64
 import datetime
 import pyimgur
+import socket
 import threading
 
+import warnings
+warnings.filterwarnings("ignore")
 
-global deepfakeModel
-
+sys.path.append("/home/ubuntu/CS492_BackEnd/test_app/")
 
 CLIENT_ID = "bed4f9ee849a845"
 thread_queue = dict()
@@ -42,14 +45,19 @@ def api_test(request, content):
         path = default_storage.save(filename, ContentFile(image_file.read()))
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
         print("Requested image Saved")
+        print(path)
         ''' 2. Image Processing by using GAN model -- YeJi's part  '''
-        new_path = imgProcessing(tmp_file, templateId)
+        new_path = imgProcessing(path, templateId)
+        
+        
         ''' 3. Send Json Response message containing Processed image (ID picture) '''
         with open(new_path, mode='rb') as file:
             img = file.read()
         data = {'img': base64.encodebytes(img).decode("utf-8")}
-        #print(data['img'][:30])
-        deleteTemp(tmp_file, new_path)
+        
+        if os.path.isfile(path):
+            os.remove(path)
+
         return JsonResponse(data)
     elif request.method == 'GET':
         print("Test - GET")
@@ -87,15 +95,17 @@ def imgurRequest(path):
 
 ''' Function to process the face image to ID Picture '''
 def imgProcessing(path, templateId):
-    filename = path.split('/')[-1]
-    print(path)
-    img = Image.open(path)
-    im_flip = filpImage(img)
-    new_filename = path.replace(filename, 'temp_processed_') + str(datetime.datetime.now()) + '.jpg'
-    print(new_filename)
-    im_flip.save(new_filename, quality=100)
-    return new_filename
-
+    HOST = '127.0.0.1'
+    PORT = 46000
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((HOST, PORT))
+    filename = path.split("/")[-1]
+    send_data = filename + "/" + str(templateId)
+    client_socket.sendall(send_data.encode())
+    new_path = client_socket.recv(1024).decode()
+    print('Result -', new_path)
+    client_socket.close()
+    return new_path
 
 def filpImage(img):
     return ImageOps.flip(img)
